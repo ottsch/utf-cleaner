@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Invisible & Non-Standard UTF Characters</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // Configure Tailwind for 'selector' dark mode and custom min-height
+        tailwind.config = {
+            darkMode: 'selector',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    minHeight: {
+                        'line': '1.25rem', // Approx height of one line of small text
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // Apply theme early to minimize FOUC (Flash of Unstyled Content)
+        function applyInitialTheme() {
+            const isDarkMode = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                if (!('theme' in localStorage)) localStorage.theme = 'dark';
+            } else {
+                document.documentElement.classList.remove('dark');
+                if (!('theme' in localStorage)) localStorage.theme = 'light';
+            }
+        }
+        applyInitialTheme();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .preserve-whitespace { /* Preserve whitespace/newlines in output */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #charInfo {
+            transition: color 0.3s ease-in-out;
+        }
+        .sr-only { /* Hide visually but keep accessible */
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+        }
+        body, .dark-mode-transition { /* Smooth theme transitions */
+             transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+        textarea {
+            resize: vertical;
+        }
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked + .toggle-label .toggle-dot {
+            transform: translateX(100%);
+            background-color: white;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+             background-color: #4f46e5;
+        }
+         .dark .toggle-checkbox:checked + .toggle-label {
+             background-color: #38bdf8;
+         }
+         /* List bullet color */
+         .dark .improved-list li::marker { color: #9ca3af; }
+         .improved-list li::marker { color: #6b7280; }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-200 dark-mode-transition min-h-screen">
+
+    <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-5 sm:p-6 md:p-8 rounded-lg shadow-lg dark-mode-transition">
+        <div class="flex justify-between items-center mb-5 sm:mb-6">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">Clean UTF Characters</h1>
+             <div class="flex items-center">
+                 <label id="darkModeLabel" class="sr-only">Toggle Theme</label>
+                 <button type="button" id="darkModeToggleBtn" aria-labelledby="darkModeLabel" class="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                 </button>
+            </div>
+        </div>
+
+        <p class="mb-5 sm:mb-6 text-sm sm:text-base text-gray-600 dark:text-gray-400">Paste your text below to automatically remove or replace potentially problematic invisible or non-standard characters. Whitespace handling is adjusted for Markdown tables and lists.</p>
+
+        <div class="mb-5 sm:mb-6">
+            <label for="inputText" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paste Text Here:</label>
+            <textarea id="inputText" rows="8" class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 dark-mode-transition text-sm sm:text-base" placeholder="Paste text here... cleaning happens automatically."></textarea>
+        </div>
+
+        <div class="flex items-center justify-start mb-5 sm:mb-6">
+             <input type="checkbox" id="typographyCheckbox" class="toggle-checkbox sr-only" checked role="switch" aria-checked="true">
+             <label for="typographyCheckbox" class="toggle-label relative inline-flex items-center h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 dark:bg-gray-600 transition-colors duration-200 ease-in-out focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-800">
+                 <span aria-hidden="true" class="toggle-dot pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+             </label>
+            <span id="typographyLabelText" class="ml-3 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+                Replace typographical characters (—, –, “, ”, ‘, ’, «, », „, …, etc.)
+            </span>
+        </div>
+
+        <div class="mb-5 sm:mb-6">
+            <p id="charInfo" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 min-h-line"></p> <div class="flex justify-between items-center mb-2">
+                <label for="outputText" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cleaned Text:</label>
+                <button id="copyButton" class="inline-flex items-center text-sm py-1.5 px-3 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium rounded-md transition-opacity duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:ring-offset-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span id="copyButtonText">Copy</span>
+                </button>
+            </div>
+            <div id="outputText" class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-md min-h-[100px] sm:min-h-[150px] preserve-whitespace dark-mode-transition text-sm sm:text-base"></div>
+        </div>
+
+         <div class="pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 dark-mode-transition">
+            <h2 class="text-lg sm:text-xl font-semibold mb-3 text-gray-700 dark:text-gray-200">About This Tool</h2>
+            <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
+                This tool automatically cleans text pasted into the input box using several steps:
+            </p>
+             <ul class="improved-list list-disc list-outside space-y-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 sm:mb-5 pl-5">
+                 <li>Removes control characters (except Tab, LF, CR), zero-width characters (ZWSP, ZWJ, ZWNJ, BOM), and Mongolian Vowel Separator.</li>
+                 <li>Replaces non-breaking spaces (NBSP, NNBSP) with standard spaces.</li>
+                 <li>Optionally replaces typographical characters (dashes, quotes, ellipsis) with standard equivalents based on the toggle setting.</li>
+                 <li>Replaces tabs with a single space.</li>
+                 <li>Collapses consecutive spaces into a single standard space, except on lines identified as Markdown tables (containing `|`) or nested lists (starting with `  ` + `*`/`+`/`-`).</li>
+                 <li>Removes trailing spaces from lines, except for Markdown table/list lines.</li>
+                 <li>Trims leading/trailing whitespace from the final result.</li>
+             </ul>
+            <h3 class="text-base sm:text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">Privacy Note</h3>
+            <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                All processing happens directly in your browser. The text you paste is not sent to any server.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const charInfo = document.getElementById('charInfo');
+        const copyButton = document.getElementById('copyButton');
+        const copyButtonText = document.getElementById('copyButtonText');
+        const typographyCheckbox = document.getElementById('typographyCheckbox');
+        const darkModeToggleBtn = document.getElementById('darkModeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+
+        // --- Dark Mode Logic ---
+        function updateDarkModeVisuals(isDark) {
+             if (isDark) {
+                 sunIcon.classList.add('hidden');
+                 moonIcon.classList.remove('hidden');
+             } else {
+                 sunIcon.classList.remove('hidden');
+                 moonIcon.classList.add('hidden');
+             }
+             darkModeToggleBtn.setAttribute('aria-checked', isDark.toString());
+         }
+
+        function setDarkMode(isDark) {
+             if (isDark) {
+                 document.documentElement.classList.add('dark');
+                 localStorage.theme = 'dark';
+             } else {
+                 document.documentElement.classList.remove('dark');
+                 localStorage.theme = 'light';
+             }
+             updateDarkModeVisuals(isDark);
+         }
+
+        updateDarkModeVisuals(document.documentElement.classList.contains('dark'));
+
+        darkModeToggleBtn.addEventListener('click', () => {
+            setDarkMode(!document.documentElement.classList.contains('dark'));
+        });
+
+        // --- Typography Toggle Logic ---
+        typographyCheckbox.addEventListener('change', () => {
+            typographyCheckbox.setAttribute('aria-checked', typographyCheckbox.checked.toString());
+            cleanAndDisplay();
+        });
+        typographyCheckbox.setAttribute('aria-checked', typographyCheckbox.checked.toString());
+
+
+        // --- Character Cleaning Logic ---
+        // Regex to remove control chars (except LF, CR, Tab), ZWSP, BOM, etc.
+        const controlCharsAndSeparatorsRegex = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u180E\u200B-\u200D\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+        // Map for replacing common typographical characters
+        const typographicalCharsMap = {
+            '\u00AB': '"', '\u00BB': '"', '\u2011': '-', '\u2013': '-', '\u2014': '-',
+            '\u2018': "'", '\u2019': "'", '\u201A': "'", '\u201C': '"', '\u201D': '"',
+            '\u201E': '"', '\u2026': '...', '\u2039': "'", '\u203A': "'"
+        };
+        const typographicalCharsRegex = new RegExp(`[${Object.keys(typographicalCharsMap).join('')}]`, 'g');
+        const spaceNormalizationRegex = /[\u00A0\u202F]/g; // NBSP, NNBSP -> standard space
+        const tabRegex = /\t/g; // Tab -> standard space
+        const multipleSpacesRegex = / {2,}/g; // Collapse multiple spaces
+        // Regex to identify lines likely part of Markdown tables or nested lists (to preserve their spacing)
+        const markdownTableOrListRegex = /^ {2,}[*+-] |\|/;
+        const trailingSpacesRegex = / +$/; // Match trailing spaces
+
+        function cleanAndDisplay() {
+            const originalText = inputText.value;
+            const replaceTypographical = typographyCheckbox.checked;
+
+            // Show/Hide Copy button using opacity (prevents layout shift)
+            if (originalText.trim() === '') {
+                copyButton.classList.add('opacity-0', 'pointer-events-none');
+            } else {
+                copyButton.classList.remove('opacity-0', 'pointer-events-none');
+            }
+
+            // Cleaning Steps
+            let cleaned = originalText.replace(controlCharsAndSeparatorsRegex, '');
+            if (replaceTypographical) {
+                cleaned = cleaned.replace(typographicalCharsRegex, (match) => typographicalCharsMap[match] || match);
+            }
+            cleaned = cleaned.replace(spaceNormalizationRegex, ' ');
+            cleaned = cleaned.replace(tabRegex, ' ');
+            const lines = cleaned.split('\n');
+            const processedLines = lines.map(line => {
+                const isMarkdownFormattingLine = markdownTableOrListRegex.test(line);
+                if (!isMarkdownFormattingLine) {
+                    line = line.replace(multipleSpacesRegex, ' ');
+                    line = line.replace(trailingSpacesRegex, '');
+                }
+                return line;
+            });
+            cleaned = processedLines.join('\n');
+            cleaned = cleaned.trim();
+
+            // Update Output and Status Message
+            outputText.textContent = cleaned;
+            const originalLength = originalText.length;
+            const cleanedLength = cleaned.length;
+            const lengthChanged = originalLength !== cleanedLength;
+            let message = '';
+            let messageClass = 'text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 min-h-line';
+
+            if (originalLength === 0) {
+                message = '';
+            } else if (lengthChanged) {
+                message = `Cleaned! ${cleanedLength} chars remaining (was ${originalLength}).`;
+                messageClass = 'text-xs sm:text-sm text-green-600 dark:text-green-400 mb-2 min-h-line';
+            } else {
+                 typographicalCharsRegex.lastIndex = 0;
+                 if (!replaceTypographical && typographicalCharsRegex.test(originalText)) {
+                     message = `No changes made. Typographical characters were kept as requested.`;
+                 } else {
+                     message = `Looks good! No changes needed.`;
+                 }
+            }
+            charInfo.textContent = message; // Set message text (empty if none)
+            charInfo.className = messageClass; // Apply styling and min-height class
+        }
+
+        // --- Event Listeners ---
+        inputText.addEventListener('input', cleanAndDisplay);
+
+        copyButton.addEventListener('click', () => {
+            const textToCopy = outputText.textContent;
+            if (!textToCopy) {
+                copyButtonText.textContent = 'Nothing to Copy';
+                 setTimeout(() => { copyButtonText.textContent = 'Copy'; }, 2000);
+                return;
+            }
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                copyButtonText.textContent = 'Copied!';
+                copyButton.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
+                copyButton.classList.add('bg-green-500', 'dark:bg-green-600', 'text-white', 'dark:text-white');
+                setTimeout(() => {
+                    copyButtonText.textContent = 'Copy';
+                    copyButton.classList.remove('bg-green-500', 'dark:bg-green-600', 'text-white', 'dark:text-white');
+                    copyButton.classList.add('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                copyButtonText.textContent = 'Copy Failed';
+                copyButton.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
+                copyButton.classList.add('bg-red-500', 'dark:bg-red-600', 'text-white', 'dark:text-white');
+                setTimeout(() => {
+                    copyButtonText.textContent = 'Copy';
+                    copyButton.classList.remove('bg-red-500', 'dark:bg-red-600', 'text-white', 'dark:text-white');
+                    copyButton.classList.add('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
+                }, 3000);
+            });
+         });
+
+         // Initial clean/check on page load
+         cleanAndDisplay();
+
+    </script>
+
+</body>
+</html>

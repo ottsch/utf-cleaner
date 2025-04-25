@@ -8,16 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
-        // Configure Tailwind for 'selector' dark mode and custom min-height
         tailwind.config = {
             darkMode: 'selector',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
                     minHeight: {
-                        'line': '1.25rem', // Approx height of one line of small text
+                        'line': '1.25rem',
                     }
                 }
             }
@@ -25,44 +21,35 @@
     </script>
 
     <script>
-        // Apply theme early to minimize FOUC (Flash of Unstyled Content)
         function applyInitialTheme() {
             const isDarkMode = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
             if (isDarkMode) {
                 document.documentElement.classList.add('dark');
-                // Set theme in localStorage only if it wasn't set previously
                 if (!('theme' in localStorage)) localStorage.theme = 'dark';
             } else {
                 document.documentElement.classList.remove('dark');
-                 // Set theme in localStorage only if it wasn't set previously
                 if (!('theme' in localStorage)) localStorage.theme = 'light';
             }
         }
         applyInitialTheme();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-
     <style>
-        /* Toggle Switch Styles - Kept as custom CSS as Tailwind peer/group modifiers can become complex for this specific structure */
         .toggle-checkbox:checked + .toggle-label .toggle-dot {
             transform: translateX(100%);
-            background-color: white; /* Specific color for toggle dot */
+            background-color: white;
         }
         .toggle-checkbox:checked + .toggle-label {
-             background-color: #4f46e5; /* Corresponds roughly to indigo-600 */
+             background-color: #4f46e5;
         }
          .dark .toggle-checkbox:checked + .toggle-label {
-             background-color: #38bdf8; /* Corresponds roughly to sky-500 */
+             background-color: #38bdf8;
          }
-         /* List bullet color - ::marker pseudo-element is not directly stylable with base Tailwind utilities */
-         .dark .improved-list li::marker { color: #9ca3af; } /* dark:text-gray-400 equivalent */
-         .improved-list li::marker { color: #6b7280; } /* text-gray-500 equivalent */
+         .dark .improved-list li::marker { color: #9ca3af; }
+         .improved-list li::marker { color: #6b7280; }
     </style>
 </head>
-<body class="p-4 sm:p-6 md:p-8 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-200 min-h-screen transition-colors duration-300 ease-in-out">
+<body class="p-4 sm:p-6 md:p-8 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-200 min-h-screen transition-colors duration-300 ease-in-out font-sans">
 
     <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-5 sm:p-6 md:p-8 rounded-lg shadow-lg transition-colors duration-300 ease-in-out">
         <div class="flex justify-between items-center mb-5 sm:mb-6">
@@ -161,7 +148,6 @@
              updateDarkModeVisuals(isDark);
          }
 
-        // Initialize dark mode visuals based on current state
         updateDarkModeVisuals(document.documentElement.classList.contains('dark'));
 
         darkModeToggleBtn.addEventListener('click', () => {
@@ -172,31 +158,25 @@
             typographyCheckbox.setAttribute('aria-checked', typographyCheckbox.checked.toString());
             cleanAndDisplay();
         });
-        // Set initial aria-checked state for typography toggle
         typographyCheckbox.setAttribute('aria-checked', typographyCheckbox.checked.toString());
 
-
-        // Regex to remove control chars (except LF, CR, Tab), ZWSP, BOM, MVS, etc.
         const controlCharsAndSeparatorsRegex = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u180E\u200B-\u200D\u202A-\u202E\u2060-\u2064\uFEFF]/g;
-        // Map for replacing common typographical characters
         const typographicalCharsMap = {
-            '\u00AB': '"', '\u00BB': '"', '\u2011': '-', '\u2013': '-', '\u2014': '-', // «, », ‑, –, —
-            '\u2018': "'", '\u2019': "'", '\u201A': "'", '\u201C': '"', '\u201D': '"', // ‘, ’, ‚, “, ”
-            '\u201E': '"', '\u2026': '...', '\u2039': "'", '\u203A': "'"             // „, …, ‹, ›
+            '\u00AB': '"', '\u00BB': '"', '\u2011': '-', '\u2013': '-', '\u2014': '-',
+            '\u2018': "'", '\u2019': "'", '\u201A': "'", '\u201C': '"', '\u201D': '"',
+            '\u201E': '"', '\u2026': '...', '\u2039': "'", '\u203A': "'"
         };
         const typographicalCharsRegex = new RegExp(`[${Object.keys(typographicalCharsMap).join('')}]`, 'g');
-        const spaceNormalizationRegex = /[\u00A0\u202F]/g; // Non-breaking space, Narrow non-breaking space -> standard space
-        const tabRegex = /\t/g; // Tab -> standard space
-        const multipleSpacesRegex = / {2,}/g; // Collapse multiple standard spaces
-        // Regex to identify lines likely part of Markdown tables or nested lists (to preserve their spacing)
+        const spaceNormalizationRegex = /[\u00A0\u202F]/g;
+        const tabRegex = /\t/g;
+        const multipleSpacesRegex = / {2,}/g;
         const markdownTableOrListRegex = /^ {2,}[*+-] |\|/;
-        const trailingSpacesRegex = / +$/; // Match trailing standard spaces
+        const trailingSpacesRegex = / +$/;
 
         function cleanAndDisplay() {
             const originalText = inputText.value;
             const replaceTypographical = typographyCheckbox.checked;
 
-            // Show/Hide Copy button using opacity to prevent layout shift
             if (originalText.trim() === '') {
                 copyButton.classList.add('opacity-0', 'pointer-events-none');
             } else {
@@ -213,7 +193,6 @@
             const lines = cleaned.split('\n');
             const processedLines = lines.map(line => {
                 const isMarkdownFormattingLine = markdownTableOrListRegex.test(line);
-                // Only collapse multiple spaces and trim trailing spaces on non-Markdown lines
                 if (!isMarkdownFormattingLine) {
                     line = line.replace(multipleSpacesRegex, ' ');
                     line = line.replace(trailingSpacesRegex, '');
@@ -221,7 +200,7 @@
                 return line;
             });
             cleaned = processedLines.join('\n');
-            cleaned = cleaned.trim(); // Trim leading/trailing whitespace from the final result
+            cleaned = cleaned.trim();
 
             outputText.textContent = cleaned;
 
@@ -229,27 +208,24 @@
             const cleanedLength = cleaned.length;
             const lengthChanged = originalLength !== cleanedLength;
             let message = '';
-            // Base classes for charInfo, including transitions and min-height
             let messageBaseClass = 'text-xs sm:text-sm mb-2 min-h-line transition-colors duration-300 ease-in-out';
-            let messageColorClass = 'text-gray-500 dark:text-gray-400'; // Default color
+            let messageColorClass = 'text-gray-500 dark:text-gray-400';
 
             if (originalLength === 0) {
-                message = ''; // No message if input is empty
+                message = '';
             } else if (lengthChanged) {
                 message = `Cleaned! ${cleanedLength} chars remaining (was ${originalLength}).`;
-                 messageColorClass = 'text-green-600 dark:text-green-400'; // Success color
+                 messageColorClass = 'text-green-600 dark:text-green-400';
             } else {
-                 // Check if typographical chars exist but weren't replaced (if toggle is off)
-                 typographicalCharsRegex.lastIndex = 0; // Reset regex state
+                 typographicalCharsRegex.lastIndex = 0;
                  if (!replaceTypographical && typographicalCharsRegex.test(originalText)) {
                      message = `No changes made. Typographical characters were kept as requested.`;
                  } else {
                      message = `Looks good! No changes needed.`;
                  }
-                 // Keep default color class
             }
             charInfo.textContent = message;
-            charInfo.className = `${messageBaseClass} ${messageColorClass}`; // Apply combined classes
+            charInfo.className = `${messageBaseClass} ${messageColorClass}`;
         }
 
         inputText.addEventListener('input', cleanAndDisplay);
@@ -263,11 +239,9 @@
             }
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyButtonText.textContent = 'Copied!';
-                // Temporarily change button style to indicate success
                 copyButton.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
                 copyButton.classList.add('bg-green-500', 'dark:bg-green-600', 'text-white', 'dark:text-white');
                 setTimeout(() => {
-                    // Revert button style
                     copyButtonText.textContent = 'Copy';
                     copyButton.classList.remove('bg-green-500', 'dark:bg-green-600', 'text-white', 'dark:text-white');
                     copyButton.classList.add('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
@@ -275,11 +249,9 @@
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
                 copyButtonText.textContent = 'Copy Failed';
-                 // Temporarily change button style to indicate error
                 copyButton.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
                 copyButton.classList.add('bg-red-500', 'dark:bg-red-600', 'text-white', 'dark:text-white');
                 setTimeout(() => {
-                    // Revert button style
                     copyButtonText.textContent = 'Copy';
                     copyButton.classList.remove('bg-red-500', 'dark:bg-red-600', 'text-white', 'dark:text-white');
                     copyButton.classList.add('bg-gray-200', 'dark:bg-gray-600', 'hover:bg-gray-300', 'dark:hover:bg-gray-500', 'text-gray-700', 'dark:text-gray-200');
@@ -287,7 +259,6 @@
             });
          });
 
-         // Initial clean/check on page load in case of browser auto-fill
          cleanAndDisplay();
     </script>
 

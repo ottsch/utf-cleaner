@@ -171,6 +171,7 @@
         const tabRegex = /\t/g;
         const multipleSpacesRegex = / {2,}/g;
         const markdownTableOrListRegex = /^ {2,}[*+-] |\|/;
+        const codeBlockRegex = /^```/;
         const trailingSpacesRegex = / +$/;
 
         function cleanAndDisplay() {
@@ -191,14 +192,30 @@
             cleaned = cleaned.replace(tabRegex, ' ');
 
             const lines = cleaned.split('\n');
-            const processedLines = lines.map(line => {
-                const isMarkdownFormattingLine = markdownTableOrListRegex.test(line);
-                if (!isMarkdownFormattingLine) {
+            const processedLines = [];
+            let isInCodeBlock = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                
+                // Check if this line is a code block delimiter
+                if (codeBlockRegex.test(line)) {
+                    isInCodeBlock = !isInCodeBlock;
+                    processedLines.push(line);
+                    continue;
+                }
+                
+                // Process line based on whether it's in a code block, markdown formatting line, or regular text
+                if (isInCodeBlock || markdownTableOrListRegex.test(line)) {
+                    // Preserve formatting for code blocks and markdown tables/lists
+                    processedLines.push(line);
+                } else {
+                    // Regular text processing
                     line = line.replace(multipleSpacesRegex, ' ');
                     line = line.replace(trailingSpacesRegex, '');
+                    processedLines.push(line);
                 }
-                return line;
-            });
+            }
             cleaned = processedLines.join('\n');
             cleaned = cleaned.trim();
 

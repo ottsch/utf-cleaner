@@ -104,8 +104,8 @@
                  <li>Replaces non-breaking spaces (NBSP, NNBSP) with standard spaces.</li>
                  <li>Optionally replaces typographical characters (dashes, quotes, ellipsis) with standard equivalents based on the toggle setting.</li>
                  <li>Replaces tabs with a single space.</li>
-                 <li>Collapses consecutive spaces into a single standard space, except on lines identified as Markdown tables (containing `|`) or nested lists (starting with `  ` + `*`/`+`/`-`).</li>
-                 <li>Removes trailing spaces from lines, except for Markdown table/list lines.</li>
+                 <li>Collapses consecutive spaces into a single standard space, except on lines identified as Markdown tables (containing `|`), nested lists (starting with `  ` + `*`/`+`/`-`), or within code blocks (between triple backticks ```).</li>
+                 <li>Removes trailing spaces from lines, except for Markdown table/list lines and code blocks.</li>
                  <li>Trims leading/trailing whitespace from the final result.</li>
              </ul>
             <h3 class="text-base sm:text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">Privacy Note</h3>
@@ -171,6 +171,7 @@
         const tabRegex = /\t/g;
         const multipleSpacesRegex = / {2,}/g;
         const markdownTableOrListRegex = /^ {2,}[*+-] |\|/;
+        const codeBlockRegex = /^```/;
         const trailingSpacesRegex = / +$/;
 
         function cleanAndDisplay() {
@@ -191,14 +192,31 @@
             cleaned = cleaned.replace(tabRegex, ' ');
 
             const lines = cleaned.split('\n');
-            const processedLines = lines.map(line => {
-                const isMarkdownFormattingLine = markdownTableOrListRegex.test(line);
-                if (!isMarkdownFormattingLine) {
+            const processedLines = [];
+            let isInCodeBlock = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                
+                // Check if this line is a code block delimiter
+                if (codeBlockRegex.test(line)) {
+                    isInCodeBlock = !isInCodeBlock;
+                    processedLines.push(line);
+                    continue;
+                }
+                
+                // Process line based on whether it's in a code block, markdown formatting line, or regular text
+                if (isInCodeBlock || markdownTableOrListRegex.test(line)) {
+                    // Preserve spacing/indentation for code blocks and markdown tables/lists
+                    // but still apply other cleaning operations
+                    processedLines.push(line);
+                } else {
+                    // Regular text processing - normalize spaces
                     line = line.replace(multipleSpacesRegex, ' ');
                     line = line.replace(trailingSpacesRegex, '');
+                    processedLines.push(line);
                 }
-                return line;
-            });
+            }
             cleaned = processedLines.join('\n');
             cleaned = cleaned.trim();
 
